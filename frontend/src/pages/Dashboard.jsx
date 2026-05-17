@@ -189,10 +189,13 @@ const Dashboard = () => {
     }
 
     // 2. Token exists but account not yet verified → verify-email
+    // Only redirect if email_verified_at is explicitly null (not undefined).
+    // undefined = old user object in localStorage before this feature was added → let them through.
+    // null = newly registered unverified user → must verify.
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const parsed = JSON.parse(storedUser);
-      if (!parsed.email_verified_at) {
+      if (parsed.email_verified_at === null) {
         navigate('/verify-email');
         return;
       }
