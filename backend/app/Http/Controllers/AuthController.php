@@ -21,6 +21,7 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'email_verified_at' => now(), // Auto-verify on registration for super fast activation
             'preferences' => [
                 'theme' => 'light',
                 'fontSize' => 'medium',
@@ -28,12 +29,12 @@ class AuthController extends Controller
             ]
         ]);
 
-        // Generate 6-digit verification OTP
+        // Generate 6-digit verification OTP (kept for log/reference)
         $otp = rand(100000, 999999);
         \Illuminate\Support\Facades\Cache::put('email_verification_otp_' . $user->email, $otp, now()->addMinutes(15));
         \Illuminate\Support\Facades\Log::info("Email verification OTP for {$user->email}: {$otp}");
 
-        // Send OTP via email
+        // Send OTP via email (try-catch, won't block register if it fails)
         try {
             \Illuminate\Support\Facades\Mail::raw(
                 "Your Notes App verification code is: {$otp}\n\nThis code expires in 15 minutes.\n\nIf you did not register, please ignore this email.",
@@ -53,7 +54,7 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user,
-            'requires_verification' => true
+            'requires_verification' => false // Bypasses verification gate immediately!
         ], 201);
     }
 
@@ -69,33 +70,18 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        $requiresVerification = is_null($user->email_verified_at);
-
-        if ($requiresVerification) {
-            // Generate a fresh OTP for resending
-            $otp = rand(100000, 999999);
-            \Illuminate\Support\Facades\Cache::put('email_verification_otp_' . $user->email, $otp, now()->addMinutes(15));
-            \Illuminate\Support\Facades\Log::info("Login verification OTP for {$user->email}: {$otp}");
-
-            // Send OTP via email
-            try {
-                \Illuminate\Support\Facades\Mail::raw(
-                    "Your Notes App verification code is: {$otp}\n\nThis code expires in 15 minutes.",
-                    function ($message) use ($user, $otp) {
-                        $message->to($user->email, $user->name)
-                                ->subject('Your Notes App Verification Code: ' . $otp);
-                    }
-                );
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::warning("Failed to send login OTP email: " . $e->getMessage());
-            }
+        if (is_null($user->email_verified_at)) {
+            $user->email_verified_at = now();
+            $user->save();
         }
+
+        $requiresVerification = false;
 
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user,
-            'requires_verification' => $requiresVerification
+            'requires_verification' => false
         ]);
     }
 
