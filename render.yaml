@@ -1,0 +1,95 @@
+services:
+  # ── Backend API (Laravel) ──────────────────────────────────────
+  - type: web
+    name: notes-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: NotesApp
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        generateValue: true          # Render auto-generates
+      - key: APP_URL
+        fromService:
+          type: web
+          name: notes-backend
+          property: host
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        sync: false                   # Fill in PlanetScale/Railway host
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: notes-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: notes-redis
+          property: port
+      - key: REDIS_PASSWORD
+        fromService:
+          type: redis
+          name: notes-redis
+          property: password
+      - key: CACHE_STORE
+        value: redis
+      - key: SESSION_DRIVER
+        value: redis
+      - key: BROADCAST_CONNECTION
+        value: reverb
+      - key: REVERB_APP_ID
+        value: notesapp
+      - key: REVERB_APP_KEY
+        generateValue: true
+      - key: REVERB_APP_SECRET
+        generateValue: true
+      - key: REVERB_HOST
+        value: "0.0.0.0"
+      - key: REVERB_PORT
+        value: "8085"
+      - key: REVERB_SCHEME
+        value: http
+      - key: FRONTEND_URL
+        sync: false                   # Fill in: https://notes-frontend.onrender.com
+      - key: MAIL_MAILER
+        value: log                    # Logs OTP to console (free tier)
+      - key: FILESYSTEM_DISK
+        value: local
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: LOG_LEVEL
+        value: error
+
+  # ── Frontend (React + Nginx) ────────────────────────────────────
+  - type: web
+    name: notes-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile.prod
+    dockerContext: ./frontend
+    plan: free
+    envVars:
+      - key: VITE_API_URL
+        sync: false                   # Fill in: https://notes-backend.onrender.com/api
+
+  # ── Redis ───────────────────────────────────────────────────────
+  - type: redis
+    name: notes-redis
+    plan: free
+    maxmemoryPolicy: noeviction
