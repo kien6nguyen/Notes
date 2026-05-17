@@ -23,7 +23,4 @@ php artisan storage:link || true
 # Ensure all generated files are owned by www-data
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Start Reverb in background and redirect output to log file for debugging (detached session)
-nohup setsid php artisan reverb:start --host=0.0.0.0 --port=8085 > /var/www/html/storage/logs/reverb.log 2>&1 &
-
 echo "✅ Backend ready"

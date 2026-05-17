@@ -31,6 +31,11 @@ RUN mkdir -p /etc/nginx/server-opts.d \
     && chown www-data:www-data /etc/nginx/server-opts.d/websocket.conf \
     && chmod 644 /etc/nginx/server-opts.d/websocket.conf
 
+# Copy Reverb s6 service run script
+RUN mkdir -p /etc/services.d/reverb \
+    && cp reverb-service.sh /etc/services.d/reverb/run \
+    && chmod +x /etc/services.d/reverb/run
+
 # Switch back to www-data for runtime
 USER www-data
 
