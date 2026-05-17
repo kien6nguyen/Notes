@@ -17,7 +17,7 @@ class NotesManagementTest extends TestCase
      */
     public function test_user_registration_and_login(): void
     {
-        // 1. Register
+        // 1. Register unverified user
         $registerResponse = $this->postJson('/api/register', [
             'name' => 'John Doe',
             'email' => 'john@example.com',
@@ -25,18 +25,42 @@ class NotesManagementTest extends TestCase
         ]);
 
         $registerResponse->assertStatus(201)
-            ->assertJsonStructure(['access_token', 'user']);
+            ->assertJsonStructure(['access_token', 'user', 'requires_verification'])
+            ->assertJsonFragment(['requires_verification' => true]);
 
         $this->assertDatabaseHas('users', ['email' => 'john@example.com']);
+        $token = $registerResponse->json('access_token');
 
-        // 2. Login
+        // 2. Accessing notes unverified should return 403
+        $this->withHeaders(['Authorization' => "Bearer {$token}"])
+            ->getJson('/api/notes')
+            ->assertStatus(403)
+            ->assertJsonFragment(['requires_verification' => true]);
+
+        // 3. Verify OTP
+        $otp = \Illuminate\Support\Facades\Cache::get('email_verification_otp_john@example.com');
+        $this->assertNotNull($otp);
+
+        $verifyResponse = $this->withHeaders(['Authorization' => "Bearer {$token}"])
+            ->postJson('/api/verify-email', ['otp' => (string)$otp]);
+
+        $verifyResponse->assertStatus(200)
+            ->assertJsonFragment(['message' => 'Account activated successfully!']);
+
+        // 4. Accessing notes verified should now succeed (returns 200 empty list)
+        $this->withHeaders(['Authorization' => "Bearer {$token}"])
+            ->getJson('/api/notes')
+            ->assertStatus(200);
+
+        // 5. Login
         $loginResponse = $this->postJson('/api/login', [
             'email' => 'john@example.com',
             'password' => 'password123',
         ]);
 
         $loginResponse->assertStatus(200)
-            ->assertJsonStructure(['access_token', 'user']);
+            ->assertJsonStructure(['access_token', 'user', 'requires_verification'])
+            ->assertJsonFragment(['requires_verification' => false]);
     }
 
     /**

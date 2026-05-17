@@ -17,7 +17,12 @@ const Login = () => {
       const response = await authService.login(email, password);
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      navigate('/');
+      
+      if (response.data.requires_verification) {
+        navigate('/verify-email');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {

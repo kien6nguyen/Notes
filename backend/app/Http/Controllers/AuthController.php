@@ -28,19 +28,25 @@ class AuthController extends Controller
             ]
         ]);
 
-        // Auto login after registration
+        // Generate 6-digit verification OTP
+        $otp = rand(100000, 999999);
+        \Illuminate\Support\Facades\Cache::put('email_verification_otp_' . $user->email, $otp, now()->addMinutes(15));
+        \Illuminate\Support\Facades\Log::info("Email verification OTP for {$user->email}: {$otp}");
+
+        // Auto login with temporary access token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user
+            'user' => $user,
+            'requires_verification' => true
         ], 201);
     }
 
     public function login(Request $request)
     {
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        if (!Auth::guard('web')->attempt($request->only('email', 'password'))) {
             return response()->json([
                 'message' => 'Invalid login details'
             ], 401);
@@ -50,10 +56,20 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        $requiresVerification = is_null($user->email_verified_at);
+
+        if ($requiresVerification) {
+            // Generate a fresh OTP for resending
+            $otp = rand(100000, 999999);
+            \Illuminate\Support\Facades\Cache::put('email_verification_otp_' . $user->email, $otp, now()->addMinutes(15));
+            \Illuminate\Support\Facades\Log::info("Login verification OTP for {$user->email}: {$otp}");
+        }
+
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user
+            'user' => $user,
+            'requires_verification' => $requiresVerification
         ]);
     }
 
@@ -148,6 +164,45 @@ class AuthController extends Controller
         \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
         return response()->json(['message' => 'Password reset successfully']);
+    }
+
+    public function verifyEmail(Request $request)
+    {
+        $request->validate([
+            'otp' => 'required|string|size:6'
+        ]);
+
+        $user = $request->user();
+        $cachedOtp = \Illuminate\Support\Facades\Cache::get('email_verification_otp_' . $user->email);
+
+        if (!$cachedOtp || $cachedOtp != $request->otp) {
+            return response()->json(['message' => 'Invalid or expired activation OTP code'], 400);
+        }
+
+        $user->email_verified_at = now();
+        $user->save();
+
+        \Illuminate\Support\Facades\Cache::forget('email_verification_otp_' . $user->email);
+
+        return response()->json([
+            'message' => 'Account activated successfully!',
+            'user' => $user
+        ]);
+    }
+
+    public function resendVerification(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->email_verified_at) {
+            return response()->json(['message' => 'Account is already verified'], 400);
+        }
+
+        $otp = rand(100000, 999999);
+        \Illuminate\Support\Facades\Cache::put('email_verification_otp_' . $user->email, $otp, now()->addMinutes(15));
+        \Illuminate\Support\Facades\Log::info("Resent Email verification OTP for {$user->email}: {$otp}");
+
+        return response()->json(['message' => 'New OTP code generated and sent to email.']);
     }
 
     public function logout(Request $request)

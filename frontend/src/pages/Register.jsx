@@ -22,7 +22,12 @@ const Register = () => {
       const response = await authService.register(displayName, email, password);
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      navigate('/');
+      
+      if (response.data.requires_verification) {
+        navigate('/verify-email');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     }

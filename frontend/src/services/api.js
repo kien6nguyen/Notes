@@ -34,7 +34,9 @@ export const authService = {
     }
     return api.put('/profile', data);
   },
-  logout: () => api.post('/logout')
+  logout: () => api.post('/logout'),
+  verifyEmail: (otp) => api.post('/verify-email', { otp }),
+  resendVerification: () => api.post('/resend-verification')
 };
 
 export const noteService = {

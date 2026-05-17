@@ -149,10 +149,14 @@ const Dashboard = () => {
       setLabels(labelsRes.data);
       setSharedNotes(sharedRes.data || []);
     } catch (error) {
-      if (error.response && error.response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/login');
+      if (error.response) {
+        if (error.response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/login');
+        } else if (error.response.status === 403 && error.response.data?.requires_verification) {
+          navigate('/verify-email');
+        }
       }
     } finally {
       setIsLoading(false);

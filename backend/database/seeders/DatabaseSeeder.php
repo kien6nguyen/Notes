@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Test User',
                 'password' => Hash::make('password'),
+                'email_verified_at' => now(),
                 'preferences' => [
                     'theme' => 'light',
                     'fontSize' => 'medium',
@@ -36,6 +37,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Admin User',
                 'password' => Hash::make('password'),
+                'email_verified_at' => now(),
                 'preferences' => [
                     'theme' => 'dark',
                     'fontSize' => 'medium',
