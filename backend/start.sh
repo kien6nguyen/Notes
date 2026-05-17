@@ -11,8 +11,8 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# ⚠️ FRESH MIGRATION: wipe all tables and reseed (one-time reset)
-php artisan migrate:fresh --force
+# Run migrations (adds new tables/columns only, preserves existing data)
+php artisan migrate --force
 
 # Seed default test users
 php artisan db:seed --force
