@@ -3,6 +3,9 @@ set -e
 
 echo "🚀 Starting Notes App Backend..."
 
+# Discover packages (skipped during composer install --no-scripts)
+php artisan package:discover --ansi
+
 # Cache config & routes with runtime env vars
 php artisan config:cache
 php artisan route:cache
