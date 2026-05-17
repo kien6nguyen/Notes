@@ -33,6 +33,19 @@ class AuthController extends Controller
         \Illuminate\Support\Facades\Cache::put('email_verification_otp_' . $user->email, $otp, now()->addMinutes(15));
         \Illuminate\Support\Facades\Log::info("Email verification OTP for {$user->email}: {$otp}");
 
+        // Send OTP via email
+        try {
+            \Illuminate\Support\Facades\Mail::raw(
+                "Your Notes App verification code is: {$otp}\n\nThis code expires in 15 minutes.\n\nIf you did not register, please ignore this email.",
+                function ($message) use ($user, $otp) {
+                    $message->to($user->email, $user->name)
+                            ->subject('Your Notes App Verification Code: ' . $otp);
+                }
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning("Failed to send OTP email to {$user->email}: " . $e->getMessage());
+        }
+
         // Auto login with temporary access token
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -63,6 +76,19 @@ class AuthController extends Controller
             $otp = rand(100000, 999999);
             \Illuminate\Support\Facades\Cache::put('email_verification_otp_' . $user->email, $otp, now()->addMinutes(15));
             \Illuminate\Support\Facades\Log::info("Login verification OTP for {$user->email}: {$otp}");
+
+            // Send OTP via email
+            try {
+                \Illuminate\Support\Facades\Mail::raw(
+                    "Your Notes App verification code is: {$otp}\n\nThis code expires in 15 minutes.",
+                    function ($message) use ($user, $otp) {
+                        $message->to($user->email, $user->name)
+                                ->subject('Your Notes App Verification Code: ' . $otp);
+                    }
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Failed to send login OTP email: " . $e->getMessage());
+            }
         }
 
         return response()->json([
@@ -202,7 +228,20 @@ class AuthController extends Controller
         \Illuminate\Support\Facades\Cache::put('email_verification_otp_' . $user->email, $otp, now()->addMinutes(15));
         \Illuminate\Support\Facades\Log::info("Resent Email verification OTP for {$user->email}: {$otp}");
 
-        return response()->json(['message' => 'New OTP code generated and sent to email.']);
+        // Send OTP via email
+        try {
+            \Illuminate\Support\Facades\Mail::raw(
+                "Your new Notes App verification code is: {$otp}\n\nThis code expires in 15 minutes.",
+                function ($message) use ($user, $otp) {
+                    $message->to($user->email, $user->name)
+                            ->subject('Your Notes App Verification Code: ' . $otp);
+                }
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning("Failed to resend OTP email: " . $e->getMessage());
+        }
+
+        return response()->json(['message' => 'New OTP code sent to your email.']);
     }
 
     public function logout(Request $request)
