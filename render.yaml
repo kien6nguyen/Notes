@@ -40,21 +40,15 @@ services:
         fromDatabase:
           name: notes-db
           property: password
+      # ── Upstash Redis (fill in from https://console.upstash.com) ──
       - key: REDIS_HOST
-        fromService:
-          type: redis
-          name: notes-redis
-          property: host
+        sync: false
       - key: REDIS_PORT
-        fromService:
-          type: redis
-          name: notes-redis
-          property: port
+        value: "6380"
       - key: REDIS_PASSWORD
-        fromService:
-          type: redis
-          name: notes-redis
-          property: password
+        sync: false
+      - key: REDIS_SCHEME
+        value: tls
       - key: CACHE_STORE
         value: redis
       - key: SESSION_DRIVER
@@ -66,7 +60,7 @@ services:
       - key: REVERB_APP_KEY
         value: notesappkey
       - key: REVERB_APP_SECRET
-        sync: false                   # Set any secret string
+        sync: false
       - key: REVERB_HOST
         value: "0.0.0.0"
       - key: REVERB_PORT
@@ -84,21 +78,8 @@ services:
       - key: LOG_LEVEL
         value: error
 
-  # ── Frontend (React Static Site) ───────────────────────────────
-  # Deploy as Render Static Site (not listed here — configure in dashboard)
-  # Build Command: npm run build
-  # Publish Directory: dist
-  # Root Directory: frontend
-  # Env: VITE_API_URL = https://notes-backend.onrender.com/api
-
-  # ── Redis ───────────────────────────────────────────────────────
-  - type: redis
-    name: notes-redis
-    plan: free
-    maxmemoryPolicy: noeviction
-
 databases:
-  # ── PostgreSQL ──────────────────────────────────────────────────
+  # ── PostgreSQL (Render free) ────────────────────────────────────
   - name: notes-db
     plan: free
     databaseName: notesdb
