@@ -21,4 +21,10 @@ Route::get('/test-mail', function () {
         ], 500);
     }
 });
-
+Route::get('/reverb-log', function () {
+    $path = storage_path('logs/reverb.log');
+    if (!file_exists($path)) {
+        return response()->json(['status' => 'error', 'message' => 'Reverb log file does not exist yet.'], 404);
+    }
+    return response(file_get_contents($path), 200, ['Content-Type' => 'text/plain']);
+});
