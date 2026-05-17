@@ -247,6 +247,7 @@ const Dashboard = () => {
 
   const handleSaveNote = async (noteData) => {
     const isUpdating = currentNote && currentNote.id;
+    const isSharedNote = currentNote && (currentNote.share_permission || currentNote.pivot?.permission);
     const optimisticLabels = (noteData.labels || []).map(id => labels.find(l => l.id === id)).filter(Boolean);
     const optimisticNote = { 
       ...noteData, 
@@ -258,20 +259,31 @@ const Dashboard = () => {
 
     setPendingSaves(prev => prev + 1);
 
-    setNotes(prev => {
-      const safePrev = Array.isArray(prev) ? prev : [];
-      if (isUpdating) {
-        return safePrev.map(n => n.id === currentNote.id ? { ...n, ...optimisticNote } : n).sort((a, b) => b.is_pinned - a.is_pinned);
-      }
-      return [optimisticNote, ...safePrev].sort((a, b) => b.is_pinned - a.is_pinned);
-    });
+    if (isSharedNote) {
+      setSharedNotes(prev => {
+        const safePrev = Array.isArray(prev) ? prev : [];
+        return safePrev.map(n => n.id === currentNote.id ? { ...n, ...optimisticNote } : n);
+      });
+    } else {
+      setNotes(prev => {
+        const safePrev = Array.isArray(prev) ? prev : [];
+        if (isUpdating) {
+          return safePrev.map(n => n.id === currentNote.id ? { ...n, ...optimisticNote } : n).sort((a, b) => b.is_pinned - a.is_pinned);
+        }
+        return [optimisticNote, ...safePrev].sort((a, b) => b.is_pinned - a.is_pinned);
+      });
+    }
     
     handleCloseModal();
 
     try {
       if (isUpdating) {
         const res = await noteService.updateNote(currentNote.id, noteData);
-        setNotes(prev => prev.map(n => n.id === currentNote.id ? { ...res.data, _tempId: n._tempId } : n).sort((a, b) => b.is_pinned - a.is_pinned));
+        if (isSharedNote) {
+          setSharedNotes(prev => prev.map(n => n.id === currentNote.id ? { ...n, ...res.data, share_permission: currentNote.share_permission || currentNote.pivot?.permission, owner: currentNote.owner || currentNote.user } : n));
+        } else {
+          setNotes(prev => prev.map(n => n.id === currentNote.id ? { ...res.data, _tempId: n._tempId } : n).sort((a, b) => b.is_pinned - a.is_pinned));
+        }
       } else {
         const res = await noteService.createNote(noteData);
         setNotes(prev => prev.map(n => n.id === optimisticNote.id ? { ...res.data, _tempId: optimisticNote.id } : n).sort((a, b) => b.is_pinned - a.is_pinned));

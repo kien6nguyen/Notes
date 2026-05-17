@@ -61,6 +61,7 @@ const resizeImage = (file, maxSize = 800) => {
 
 const NoteModal = ({ note, allLabels = [], onClose, onSave, defaultNoteColor = 'default' }) => {
   const isEditing = !!note;
+  const isReadOnly = note && (note.share_permission || note.pivot?.permission) === 'read';
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -72,6 +73,8 @@ const NoteModal = ({ note, allLabels = [], onClose, onSave, defaultNoteColor = '
   const [collaborators, setCollaborators] = useState([]);
   
   const fileInputRef = useRef(null);
+  const channelRef = useRef(null);
+  const isRemoteChange = useRef(false);
 
   // Real-time: join presence channel when editing a shared note
   useEffect(() => {
@@ -83,14 +86,22 @@ const NoteModal = ({ note, allLabels = [], onClose, onSave, defaultNoteColor = '
       .joining((user) => setCollaborators(prev => [...prev, user]))
       .leaving((user) => setCollaborators(prev => prev.filter(u => u.id !== user.id)))
       .listen('.note.updated', (e) => {
-        // Another user updated the note
+        isRemoteChange.current = true;
         setTitle(e.data.title || '');
         setContent(e.data.content || '');
         setColor(e.data.color || 'default');
+      })
+      .listenForWhisper('editing', (e) => {
+        isRemoteChange.current = true;
+        setTitle(e.title || '');
+        setContent(e.content || '');
       });
+
+    channelRef.current = channel;
 
     return () => {
       echo.leave(`note.${note.id}`);
+      channelRef.current = null;
     };
   }, [note?.id]);
 
@@ -122,8 +133,27 @@ const NoteModal = ({ note, allLabels = [], onClose, onSave, defaultNoteColor = '
     }
   }, [note, defaultNoteColor]);
 
+  // Debounced whisper as they type (only if not a remote update)
+  useEffect(() => {
+    if (isReadOnly) return;
+    if (!channelRef.current) return;
+
+    if (isRemoteChange.current) {
+      isRemoteChange.current = false;
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      channelRef.current.whisper('editing', { title, content });
+    }, 150); // 150ms delay to prevent excessive network spam
+
+    return () => clearTimeout(timeout);
+  }, [title, content]);
+
   // Check if current data differs from original
   const hasChanges = () => {
+    if (isReadOnly) return false;
+
     const current = {
       title,
       content,
@@ -150,6 +180,10 @@ const NoteModal = ({ note, allLabels = [], onClose, onSave, defaultNoteColor = '
   };
 
   const handleClose = () => {
+    if (isReadOnly) {
+      onClose();
+      return;
+    }
     if (hasChanges()) {
       // Data changed → auto-save
       onSave({ title, content, color, is_pinned: isPinned, attachments, labels: selectedLabels });
@@ -199,12 +233,13 @@ const NoteModal = ({ note, allLabels = [], onClose, onSave, defaultNoteColor = '
               <button
                 key={c.value}
                 type="button"
-                onClick={() => setColor(c.value)}
+                disabled={isReadOnly}
+                onClick={() => !isReadOnly && setColor(c.value)}
                 style={{
                   width: '18px', height: '18px', borderRadius: '50%',
                   backgroundColor: c.color,
                   border: color === c.value ? '2px solid var(--text-color)' : '2px solid transparent',
-                  cursor: 'pointer', padding: 0,
+                  cursor: isReadOnly ? 'not-allowed' : 'pointer', padding: 0,
                   transition: 'border-color 0.15s ease',
                 }}
               />
@@ -213,8 +248,9 @@ const NoteModal = ({ note, allLabels = [], onClose, onSave, defaultNoteColor = '
           <button
             type="button"
             className="btn-icon"
-            onClick={() => setIsPinned(!isPinned)}
-            style={{ color: isPinned ? 'var(--accent)' : 'var(--text-muted)' }}
+            disabled={isReadOnly}
+            onClick={() => !isReadOnly && setIsPinned(!isPinned)}
+            style={{ color: isPinned ? 'var(--accent)' : 'var(--text-muted)', cursor: isReadOnly ? 'not-allowed' : 'pointer' }}
             title={isPinned ? 'Unpin' : 'Pin note'}
           >
             {isPinned ? Icons.pinFilled : Icons.pinOutline}
@@ -243,7 +279,8 @@ const NoteModal = ({ note, allLabels = [], onClose, onSave, defaultNoteColor = '
           type="text" 
           placeholder="Title" 
           value={title} 
-          onChange={e => setTitle(e.target.value)} 
+          onChange={e => !isReadOnly && setTitle(e.target.value)} 
+          readOnly={isReadOnly}
         />
         
         {/* Labels */}
@@ -255,7 +292,9 @@ const NoteModal = ({ note, allLabels = [], onClose, onSave, defaultNoteColor = '
                 <button 
                   type="button"
                   key={label.id}
+                  disabled={isReadOnly}
                   onClick={() => {
+                    if (isReadOnly) return;
                     if (isSelected) {
                       setSelectedLabels(selectedLabels.filter(id => id !== label.id));
                     } else {
@@ -263,7 +302,7 @@ const NoteModal = ({ note, allLabels = [], onClose, onSave, defaultNoteColor = '
                     }
                   }}
                   style={{ 
-                    cursor: 'pointer',
+                    cursor: isReadOnly ? 'not-allowed' : 'pointer',
                     backgroundColor: isSelected ? label.color : 'transparent',
                     color: isSelected ? '#fff' : label.color,
                     border: `1px solid ${label.color}`,
@@ -292,13 +331,15 @@ const NoteModal = ({ note, allLabels = [], onClose, onSave, defaultNoteColor = '
             {attachments.map((url, i) => (
               <div key={i} className="modal-attachment-thumb">
                 <img src={`${IMAGE_BASE}${url}`} alt="attachment" />
-                <button 
-                  type="button" 
-                  className="remove-btn"
-                  onClick={() => removeAttachment(url)} 
-                >
-                  {Icons.x}
-                </button>
+                {!isReadOnly && (
+                  <button 
+                    type="button" 
+                    className="remove-btn"
+                    onClick={() => removeAttachment(url)} 
+                  >
+                    {Icons.x}
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -307,26 +348,33 @@ const NoteModal = ({ note, allLabels = [], onClose, onSave, defaultNoteColor = '
         <textarea 
           placeholder="Take a note..." 
           value={content} 
-          onChange={e => setContent(e.target.value)}
+          onChange={e => !isReadOnly && setContent(e.target.value)}
           autoFocus={!isEditing}
+          readOnly={isReadOnly}
         />
 
         {/* Actions */}
         <div className="modal-actions">
           <div>
-            <button 
-              type="button" 
-              className="btn-ghost" 
-              onClick={() => fileInputRef.current?.click()} 
-              disabled={uploading}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem' }}
-            >
-              {uploading ? <span className="spinner"></span> : Icons.paperclip}
-              {uploading ? 'Uploading...' : 'Attach'}
-            </button>
-            <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: 'none' }} accept="image/*" />
+            {!isReadOnly && (
+              <>
+                <button 
+                  type="button" 
+                  className="btn-ghost" 
+                  onClick={() => fileInputRef.current?.click()} 
+                  disabled={uploading}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem' }}
+                >
+                  {uploading ? <span className="spinner"></span> : Icons.paperclip}
+                  {uploading ? 'Uploading...' : 'Attach'}
+                </button>
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: 'none' }} accept="image/*" />
+              </>
+            )}
           </div>
-          <button className="btn-ghost" onClick={handleClose}>Done</button>
+          <button className="btn-ghost" onClick={handleClose}>
+            {isReadOnly ? 'Close' : 'Done'}
+          </button>
         </div>
       </div>
     </div>
