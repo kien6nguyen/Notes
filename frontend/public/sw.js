@@ -1,4 +1,4 @@
-const CACHE_NAME = 'notes-app-v1';
+const CACHE_NAME = 'notes-app-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -35,20 +35,13 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (request.method !== 'GET') return;
 
-  // API requests: Network-first with cache fallback
-  if (url.pathname.startsWith('/api/')) {
+  // API requests: ALWAYS network-first, NO caching for auth-sensitive endpoints
+  // Caching API responses causes issues with token changes and auth state
+  if (url.pathname.startsWith('/api/') || url.hostname.includes('onrender.com')) {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          // Cache successful API responses
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
         .catch(() => {
-          // Offline: return cached API response
+          // Offline: return cached API response only as fallback
           return caches.match(request).then((cached) => {
             if (cached) return cached;
             return new Response(JSON.stringify({ offline: true, message: 'You are offline' }), {
