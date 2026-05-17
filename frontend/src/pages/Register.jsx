@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
-import OtpModal from '../components/OtpModal';
 
 const EyeOpen = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -24,7 +23,6 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showOtpModal, setShowOtpModal] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
@@ -38,7 +36,7 @@ const Register = () => {
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       if (response.data.requires_verification) {
-        setShowOtpModal(true);
+        navigate('/verify-email');
       } else {
         navigate('/');
       }
@@ -48,29 +46,6 @@ const Register = () => {
       setLoading(false);
     }
   };
-
-  const PasswordInput = ({ value, onChange, show, onToggle, placeholder, id }) => (
-    <div style={{ position: 'relative' }}>
-      <input
-        id={id}
-        type={show ? 'text' : 'password'}
-        value={value}
-        onChange={onChange}
-        required
-        placeholder={placeholder}
-        style={{ paddingRight: '2.5rem', width: '100%', boxSizing: 'border-box' }}
-      />
-      <button
-        type="button"
-        onClick={onToggle}
-        tabIndex={-1}
-        aria-label={show ? 'Hide password' : 'Show password'}
-        style={{ position: 'absolute', right: '0.625rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}
-      >
-        {show ? <EyeClosed /> : <EyeOpen />}
-      </button>
-    </div>
-  );
 
   return (
     <div className="auth-container">
@@ -86,20 +61,30 @@ const Register = () => {
 
         <form onSubmit={handleRegister}>
           <div className="input-group">
-            <label htmlFor="reg-name">Display Name</label>
-            <input id="reg-name" type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} required placeholder="Enter your name" />
+            <label>Display Name</label>
+            <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} required placeholder="Enter your name" />
           </div>
           <div className="input-group">
-            <label htmlFor="reg-email">Email Address</label>
-            <input id="reg-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="Enter your email" />
+            <label>Email Address</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="Enter your email" />
           </div>
           <div className="input-group">
-            <label htmlFor="reg-password">Password</label>
-            <PasswordInput id="reg-password" value={password} onChange={e => setPassword(e.target.value)} show={showPassword} onToggle={() => setShowPassword(v => !v)} placeholder="Create a password (min. 6 chars)" />
+            <label>Password</label>
+            <div style={{ position: 'relative' }}>
+              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required placeholder="Create a password (min. 6 chars)" style={{ paddingRight: '2.5rem', width: '100%', boxSizing: 'border-box' }} />
+              <button type="button" onClick={() => setShowPassword(v => !v)} tabIndex={-1} style={{ position: 'absolute', right: '0.625rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
+                {showPassword ? <EyeClosed /> : <EyeOpen />}
+              </button>
+            </div>
           </div>
           <div className="input-group">
-            <label htmlFor="reg-confirm">Confirm Password</label>
-            <PasswordInput id="reg-confirm" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} show={showConfirmPassword} onToggle={() => setShowConfirmPassword(v => !v)} placeholder="Confirm your password" />
+            <label>Confirm Password</label>
+            <div style={{ position: 'relative' }}>
+              <input type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required placeholder="Confirm your password" style={{ paddingRight: '2.5rem', width: '100%', boxSizing: 'border-box' }} />
+              <button type="button" onClick={() => setShowConfirmPassword(v => !v)} tabIndex={-1} style={{ position: 'absolute', right: '0.625rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
+                {showConfirmPassword ? <EyeClosed /> : <EyeOpen />}
+              </button>
+            </div>
           </div>
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading ? 'Creating account...' : 'Sign Up'}
@@ -110,14 +95,6 @@ const Register = () => {
           <p>Already have an account? <Link to="/login">Login</Link></p>
         </div>
       </div>
-
-      {showOtpModal && (
-        <OtpModal
-          email={email}
-          onSuccess={() => navigate('/dashboard')}
-          onCancel={() => { setShowOtpModal(false); navigate('/login'); }}
-        />
-      )}
     </div>
   );
 };

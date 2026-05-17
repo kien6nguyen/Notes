@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
-import OtpModal from '../components/OtpModal';
 
 const EyeOpen = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -21,7 +20,6 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showOtpModal, setShowOtpModal] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -33,7 +31,7 @@ const Login = () => {
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       if (response.data.requires_verification) {
-        setShowOtpModal(true);
+        navigate('/verify-email');
       } else {
         navigate('/');
       }
@@ -58,29 +56,14 @@ const Login = () => {
 
         <form onSubmit={handleLogin}>
           <div className="input-group">
-            <label htmlFor="login-email">Email</label>
-            <input id="login-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@example.com" />
+            <label>Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@example.com" />
           </div>
-
           <div className="input-group">
-            <label htmlFor="login-password">Password</label>
+            <label>Password</label>
             <div style={{ position: 'relative' }}>
-              <input
-                id="login-password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                placeholder="••••••"
-                style={{ paddingRight: '2.5rem', width: '100%', boxSizing: 'border-box' }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(v => !v)}
-                tabIndex={-1}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                style={{ position: 'absolute', right: '0.625rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}
-              >
+              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••" style={{ paddingRight: '2.5rem', width: '100%', boxSizing: 'border-box' }} />
+              <button type="button" onClick={() => setShowPassword(v => !v)} tabIndex={-1} style={{ position: 'absolute', right: '0.625rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center' }}>
                 {showPassword ? <EyeClosed /> : <EyeOpen />}
               </button>
             </div>
@@ -88,7 +71,6 @@ const Login = () => {
               <Link to="/forgot-password" style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none' }}>Forgot password?</Link>
             </div>
           </div>
-
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
@@ -98,14 +80,6 @@ const Login = () => {
           Don't have an account? <Link to="/register">Sign Up</Link>
         </div>
       </div>
-
-      {showOtpModal && (
-        <OtpModal
-          email={email}
-          onSuccess={() => navigate('/dashboard')}
-          onCancel={() => setShowOtpModal(false)}
-        />
-      )}
     </div>
   );
 };
