@@ -28,3 +28,17 @@ Route::get('/reverb-log', function () {
     }
     return response(file_get_contents($path), 200, ['Content-Type' => 'text/plain']);
 });
+Route::get('/test-reverb', function () {
+    $results = [];
+    $hosts = ['127.0.0.1', 'localhost', '0.0.0.0', '::1'];
+    foreach ($hosts as $host) {
+        $fp = @fsockopen($host, 8085, $errno, $errstr, 2);
+        if ($fp) {
+            $results[$host] = 'SUCCESS (Connected)';
+            fclose($fp);
+        } else {
+            $results[$host] = "FAILED: $errstr ($errno)";
+        }
+    }
+    return response()->json($results);
+});
