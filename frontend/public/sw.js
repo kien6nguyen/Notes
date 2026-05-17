@@ -1,4 +1,4 @@
-const CACHE_NAME = 'notes-app-v2';
+const CACHE_NAME = 'notes-app-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -35,6 +35,18 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (request.method !== 'GET') return;
 
+  // HTML / navigation requests (e.g., direct route access / reload)
+  // Serve from network first, fallback to cached index.html if offline
+  const isNavigation = request.mode === 'navigate' || 
+                       (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'));
+  if (isNavigation) {
+    event.respondWith(
+      fetch(request).catch(() => {
+        return caches.match('/index.html') || caches.match('/');
+      })
+    );
+    return;
+  }
   // API requests: ALWAYS network-first, NO caching for auth-sensitive endpoints
   // Caching API responses causes issues with token changes and auth state
   if (url.pathname.startsWith('/api/') || url.hostname.includes('onrender.com')) {
