@@ -9,11 +9,8 @@ COPY . .
 # --no-scripts: skip package:discover (needs .env, will run at startup)
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
-# Make startup script executable
-RUN chmod +x /var/www/html/start.sh
-
 # Expose port (serversideup image listens on 8080)
 EXPOSE 8080
 
-# Use our startup script
-CMD ["/var/www/html/start.sh"]
+# Run startup script via sh (no chmod needed)
+CMD ["sh", "/var/www/html/start.sh"]
