@@ -21,11 +21,12 @@ RUN mkdir -p storage/logs \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache
 
+# Copy start script to serversideup auto-run entrypoint directory
+RUN cp start.sh /etc/entrypoint.d/99-start.sh \
+    && chmod +x /etc/entrypoint.d/99-start.sh
+
 # Switch back to www-data for runtime
 USER www-data
 
 # Expose port (serversideup image listens on 8080)
 EXPOSE 8080
-
-# Run startup script via sh
-CMD ["sh", "/var/www/html/start.sh"]

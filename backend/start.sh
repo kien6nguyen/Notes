@@ -21,6 +21,3 @@ php artisan storage:link || true
 php artisan reverb:start --host=0.0.0.0 --port=8085 &
 
 echo "✅ Backend ready"
-
-# Start nginx + php-fpm via base image entrypoint
-exec /start.sh
