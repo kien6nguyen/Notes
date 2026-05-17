@@ -131,13 +131,17 @@ const Dashboard = () => {
   }, [pendingSaves]);
 
   const fetchData = useCallback(async () => {
+    // First check if user is verified by fetching notes alone
+    // This way a single clear 403 can redirect to verify-email
     try {
-      const [notesRes, labelsRes, sharedRes] = await Promise.all([
-        noteService.getNotes(search),
+      const notesRes = await noteService.getNotes(search);
+      
+      // If notes succeeded, load everything else in parallel
+      const [labelsRes, sharedRes] = await Promise.all([
         labelService.getLabels(),
         shareService.getSharedWithMe().catch(() => ({ data: [] }))
       ]);
-      
+
       setNotes(prev => {
         const tempIdMap = {};
         if (Array.isArray(prev)) {
@@ -145,7 +149,7 @@ const Dashboard = () => {
         }
         return notesRes.data.map(n => tempIdMap[n.id] ? { ...n, _tempId: tempIdMap[n.id] } : n);
       });
-      
+
       setLabels(labelsRes.data);
       setSharedNotes(sharedRes.data || []);
     } catch (error) {
