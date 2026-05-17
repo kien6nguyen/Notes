@@ -14,6 +14,9 @@ php artisan view:cache
 # Run migrations
 php artisan migrate --force
 
+# Seed default test users
+php artisan db:seed --force
+
 # Create storage symlink if not exists
 php artisan storage:link || true
 
