@@ -68,7 +68,7 @@ const VerifyEmail = () => {
   };
 
   const handleLogout = () => {
-    authService.logout().catch(() => {});
+    authService.logout().catch(() => { });
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/login');
@@ -97,11 +97,11 @@ const VerifyEmail = () => {
         <form onSubmit={handleVerify}>
           <div className="input-group" style={{ marginBottom: '1.25rem' }}>
             <label style={{ textAlign: 'center', display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>6-Digit Code</label>
-            <input 
-              type="text" 
-              value={otp} 
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} 
-              required 
+            <input
+              type="text"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              required
               maxLength={6}
               placeholder="000000"
               style={{
@@ -119,10 +119,10 @@ const VerifyEmail = () => {
               }}
             />
           </div>
-          
-          <button 
-            type="submit" 
-            className="btn-primary" 
+
+          <button
+            type="submit"
+            className="btn-primary"
             disabled={loading || otp.length !== 6}
             style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', fontSize: '0.9rem', cursor: 'pointer' }}
           >
@@ -135,19 +135,19 @@ const VerifyEmail = () => {
         </div>
 
         <div className="auth-footer" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.5rem' }}>
-          <button 
-            type="button" 
-            className="btn-ghost" 
+          <button
+            type="button"
+            className="btn-ghost"
             onClick={handleResend}
             disabled={resending}
             style={{ fontSize: '0.8125rem', width: '100%' }}
           >
             {resending ? 'Generating new code...' : 'Resend Code'}
           </button>
-          
-          <button 
-            type="button" 
-            className="btn-ghost" 
+
+          <button
+            type="button"
+            className="btn-ghost"
             onClick={handleLogout}
             style={{ fontSize: '0.8125rem', color: '#dc2626', width: '100%' }}
           >

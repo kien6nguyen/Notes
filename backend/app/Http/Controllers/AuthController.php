@@ -39,7 +39,7 @@ class AuthController extends Controller
                 "Your Notes App verification code is: {$otp}\n\nThis code expires in 15 minutes.\n\nIf you did not register, please ignore this email.",
                 function ($message) use ($user, $otp) {
                     $message->to($user->email, $user->name)
-                            ->subject('Your Notes App Verification Code: ' . $otp);
+                        ->subject('Your Notes App Verification Code: ' . $otp);
                 }
             );
         } catch (\Exception $e) {
@@ -83,7 +83,7 @@ class AuthController extends Controller
                     "Your Notes App verification code is: {$otp}\n\nThis code expires in 15 minutes.",
                     function ($message) use ($user, $otp) {
                         $message->to($user->email, $user->name)
-                                ->subject('Your Notes App Verification Code: ' . $otp);
+                            ->subject('Your Notes App Verification Code: ' . $otp);
                     }
                 );
             } catch (\Exception $e) {
@@ -234,7 +234,7 @@ class AuthController extends Controller
                 "Your new Notes App verification code is: {$otp}\n\nThis code expires in 15 minutes.",
                 function ($message) use ($user, $otp) {
                     $message->to($user->email, $user->name)
-                            ->subject('Your Notes App Verification Code: ' . $otp);
+                        ->subject('Your Notes App Verification Code: ' . $otp);
                 }
             );
         } catch (\Exception $e) {

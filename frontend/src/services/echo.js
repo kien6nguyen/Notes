@@ -34,8 +34,8 @@ try {
   console.error('Failed to parse VITE_API_URL for Reverb setup', e);
 }
 
-// Fallback to match different APP_KEY on dev vs production
-const reverbKey = (wsHost === 'localhost' || wsHost === '127.0.0.1') ? 'finalwebkey' : 'notesappkey';
+// Match the backend Reverb App Key (defaults to finalwebkey in both local and production unless overridden)
+const reverbKey = import.meta.env.VITE_REVERB_APP_KEY || 'finalwebkey';
 
 const echo = new Echo({
   broadcaster: 'reverb',
