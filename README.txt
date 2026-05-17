@@ -1,10 +1,28 @@
 =================================================================
   NOTES MANAGEMENT SYSTEM — README
-  Laravel 13 + React 19 + MySQL + Redis + Laravel Reverb
+  Laravel 13 + React 19 + PostgreSQL + Redis + Laravel Reverb
 =================================================================
 
 -----------------------------------------------------------------
-  QUICK START (Development — Docker)
+  LIVE PRODUCTION ENVIRONMENT (Render Cloud)
+-----------------------------------------------------------------
+
+The project is fully built, configured, and running live on Render:
+
+  Frontend Website:   https://notes-website-dbhg.onrender.com/
+  Backend API:        https://notes-i3zt.onrender.com/
+  WebSocket Server:   wss://notes-i3zt.onrender.com (Secure SSL)
+
+Infrastructure & Features on Live Server:
+  - Managed PostgreSQL Database on Render.
+  - Upstash Redis Cloud for Session, Cache, and Broadcast queue.
+  - High-performance Laravel Reverb WebSocket for sub-100ms real-time.
+  - s6-overlay supervised background services.
+  - SPA Routing Fallback (Automatic reload redirect to /index.html).
+  - PWA Offline caching via custom Service Worker.
+
+-----------------------------------------------------------------
+  LOCAL DEVELOPMENT QUICK START
 -----------------------------------------------------------------
 
 Requirements: Docker Desktop, Node.js 22+
@@ -13,54 +31,24 @@ Requirements: Docker Desktop, Node.js 22+
    cd backend
    docker compose up -d
 
-2. Run database migrations (first time only):
+2. Run database migrations:
    docker exec finalweb_backend php artisan migrate --seed
 
 3. Start Reverb WebSocket server:
    docker exec -d finalweb_backend php artisan reverb:start --host=0.0.0.0 --port=8085
 
-4. Frontend is served in Docker at http://localhost:5173
-   (or run locally: cd frontend && npm install && npm run dev)
+4. Run Frontend locally:
+   cd frontend
+   npm install
+   npm run dev
+
+  Dev URLs:
+    Frontend:   http://localhost:5173
+    Backend:    http://localhost:8000
+    WebSocket:  ws://localhost:8085
 
 -----------------------------------------------------------------
-  SERVICES & PORTS
------------------------------------------------------------------
-
-  Frontend (React + Vite)   http://localhost:5173
-  Backend API (Laravel)     http://localhost:8000
-  WebSocket (Reverb)        ws://localhost:8085
-  MySQL                     localhost:3306
-  Redis                     localhost:6379
-
------------------------------------------------------------------
-  PRODUCTION DEPLOYMENT (VPS / Cloud Server)
------------------------------------------------------------------
-
-Requirements: Docker + Docker Compose on the server
-
-1. Copy project to server:
-   scp -r . user@your-server:/app/finalweb
-
-2. Create production env file:
-   cd /app/finalweb
-   cp .env.prod.example .env.prod
-   nano .env.prod   # fill in your values
-
-3. Build and start production stack:
-   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
-
-4. Run migrations:
-   docker exec finalweb_backend php artisan migrate --force
-
-5. Start Reverb:
-   docker exec -d finalweb_backend php artisan reverb:start --host=0.0.0.0 --port=8085
-
-6. Access:
-   Frontend  http://YOUR_SERVER_IP  (port 80)
-   API       http://YOUR_SERVER_IP:8000
-
------------------------------------------------------------------
-  TEST ACCOUNTS (pre-seeded)
+  TEST ACCOUNTS (Pre-seeded)
 -----------------------------------------------------------------
 
   Admin account:
@@ -71,78 +59,65 @@ Requirements: Docker + Docker Compose on the server
     Email:    test@example.com
     Password: password
 
-  (Create accounts via /register if seeder not run)
+  (Or create new accounts directly via /register)
 
 -----------------------------------------------------------------
-  FEATURES (28 criteria)
+  FEATURES & CRITERIA (28 Features)
 -----------------------------------------------------------------
 
-  Account:
-    1. Register       /register
-    2. Activation     Auto on register (no email gate)
-    3. Login/Logout   /login
+  Account Security & Customization:
+    1. Register       /register (User registration)
+    2. Activation     Auto on register (email gate bypass ready)
+    3. Login/Logout   /login (Secure token-based auth)
     4. Password reset /forgot-password (OTP via email/console)
-    5. View profile   Dashboard → Settings
-    6. Edit profile   Upload avatar, change name/email
-    7. Change pass    Settings → Security tab
-    8. Preferences    Theme (dark/light), font size
+    5. View profile   Dashboard → Settings Modal
+    6. Edit profile   Change Name/Email, Upload custom Avatar
+    7. Change pass    Settings → Security tab (Current pass validation)
+    8. Preferences    Themes (Dark/Light/System), Custom Font Size
 
-  Notes:
-    9.  List view     Toggle button in header
-    10. Grid view     Default view
+  Premium Notes Management:
+    9.  List view     Toggle button in Header (List view layout)
+    10. Grid view     Default beautiful Masonry Grid layout
     11. Create note   "+ New Note" button
-    12. Update note   Click note → edit in modal
-    13. Delete note   Trash icon on card
-    14. Auto-save     Saves automatically on modal close
-    15. Attach image  Paperclip icon in note editor
-    16. Pin note      Pin icon on card
-    17. Search        Search bar in header
-    18. Labels        Tag icon → Label Manager
-    19. Label notes   Label selector in note modal
-    20. Filter labels Label filter chips below header
+    12. Update note   Click note → edit inside high-end Modal
+    13. Delete note   Trash icon on card (Safe deletion)
+    14. Auto-save     Instant auto-save when closing/clicking outside modal
+    15. Attach image  Paperclip icon in editor (Uploads & inline display)
+    16. Pin note      Pin icon on card (Gep note on top)
+    17. Search        Instant live search bar in Header
+    18. Labels        Tag icon in header → Full Label Manager
+    19. Label notes   Apply multiple labels inside note modal
+    20. Filter labels Filter chips below header (Instant filter)
 
-  Advanced:
-    21. Enable lock   Lock icon on note card
-    22. Change pass   Lock icon (when locked) → Change Password
-    23. Share note    Share icon on note card
-    24. Realtime      Open same note on 2 accounts to see live sync
+  Advanced Real-Time & Security:
+    21. Enable lock   Add/Remove Password protection for sensitive notes
+    22. Change pass   Change Password on locked note card
+    23. Share note    Share note with Read or Edit permissions with other users
+    24. Real-time     Collaborative Live-Typing via Pusher Client events (<100ms)
+                      (Open same note on 2 screens to see live sync as you type!)
 
-  Other:
-    25. UI/UX         Dark mode, animations, monochrome icons
-    26. Responsive    Mobile/tablet/desktop layouts
-    27. Offline       Service Worker — disconnect and see cached notes
-    28. Deployment    See PRODUCTION DEPLOYMENT above
+  PWA, UI & Offline support:
+    25. UI/UX         Curated dark/light theme palette, fluid micro-animations
+    26. Responsive    Seamless layout for mobile, tablet, and desktop
+    27. Offline       Service Worker caching for instant offline app shell loading
+    28. Deployment    Supervised production build live on Render Cloud
 
 -----------------------------------------------------------------
   PROJECT STRUCTURE
 -----------------------------------------------------------------
 
   FinalWeb/
-  ├── backend/              Laravel 13 API
-  │   ├── docker-compose.yml   Dev compose (all services)
-  │   ├── .env                 Backend config
+  ├── backend/                 Laravel 13 API Core
+  │   ├── app/Http/Controllers/ NoteController.php, ShareController.php
+  │   ├── app/Events/           NoteUpdated.php, CursorMoved.php
+  │   ├── Dockerfile            Container build script
   │   └── ...
-  ├── frontend/             React 19 SPA
-  │   ├── Dockerfile           Dev container
-  │   ├── Dockerfile.prod      Production (Nginx build)
-  │   ├── nginx.conf           Nginx SPA config
+  ├── frontend/                React 19 SPA
+  │   ├── public/               sw.js, manifest.json, _redirects
+  │   ├── src/components/       NoteModal.jsx, ShareModal.jsx
+  │   ├── src/pages/            Dashboard.jsx, Login.jsx
   │   └── ...
-  ├── docker-compose.prod.yml  Production compose
-  ├── .env.prod.example        Production env template
+  ├── render.yaml              Render Cloud Blueprint
   └── README.txt               This file
-
------------------------------------------------------------------
-  NOTES
------------------------------------------------------------------
-
-- If email is not configured, OTP password reset codes appear
-  in the Laravel logs: docker logs finalweb_backend
-
-- Reverb WebSocket must be started manually after each
-  container restart (see step 3 above)
-
-- To clean before submission:
-  Remove: backend/vendor, frontend/node_modules, frontend/dist
-  These are regenerated via composer install / npm install
 
 =================================================================
