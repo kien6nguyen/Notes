@@ -182,9 +182,20 @@ const Dashboard = () => {
   const isFirstRender = React.useRef(true);
 
   useEffect(() => {
+    // 1. No token at all → login
     if (!localStorage.getItem('token')) {
       navigate('/login');
       return;
+    }
+
+    // 2. Token exists but account not yet verified → verify-email
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      if (!parsed.email_verified_at) {
+        navigate('/verify-email');
+        return;
+      }
     }
 
     if (isFirstRender.current) {

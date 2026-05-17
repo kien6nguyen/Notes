@@ -32,11 +32,16 @@ const VerifyEmail = () => {
     try {
       const response = await authService.verifyEmail(otp);
       setSuccess(response.data.message || 'Account activated successfully!');
-      
-      // Update local storage user object
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      user.email_verified_at = new Date().toISOString();
-      localStorage.setItem('user', JSON.stringify(user));
+
+      // Update user in localStorage with the verified user from the server
+      if (response.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      } else {
+        // Fallback: set email_verified_at manually
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        user.email_verified_at = new Date().toISOString();
+        localStorage.setItem('user', JSON.stringify(user));
+      }
 
       setTimeout(() => {
         navigate('/dashboard');
