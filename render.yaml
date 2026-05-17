@@ -84,3 +84,7 @@ databases:
     plan: free
     databaseName: notesdb
     user: notesuser
+
+  # ── Frontend (React + Vite → Nginx) ────────────────────────────
+  # NOTE: Also add as a separate Static Site or Web Service in the Render Dashboard
+  # pointing to frontend/Dockerfile.prod with build arg VITE_API_URL
