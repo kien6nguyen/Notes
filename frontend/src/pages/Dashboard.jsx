@@ -7,6 +7,9 @@ import ProfileSettings from '../components/ProfileSettings';
 import PasswordModal from '../components/PasswordModal';
 import ShareModal from '../components/ShareModal';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const IMAGE_BASE = API_URL.replace('/api', '');
+
 // ─── SVG Icons (monochrome) ───
 const Icons = {
   plus: (
@@ -372,7 +375,7 @@ const Dashboard = () => {
         <div className="header-left">
           <div className="avatar-circle" style={{ backgroundColor: user.avatar ? 'transparent' : 'var(--accent)', color: '#fff' }}>
             {user.avatar ? (
-              <img src={`http://localhost:8000${user.avatar}`} alt="Avatar" />
+              <img src={`${IMAGE_BASE}${user.avatar}`} alt="Avatar" />
             ) : (
               user.name.charAt(0).toUpperCase()
             )}
@@ -502,7 +505,7 @@ const Dashboard = () => {
                     {note.attachments && note.attachments.length > 0 && (
                       <div className="note-inline-images">
                         {note.attachments.map((url, i) => (
-                          <img key={i} src={`http://localhost:8000${url}`} alt="attachment" className="note-thumb" />
+                          <img key={i} src={`${IMAGE_BASE}${url}`} alt="attachment" className="note-thumb" />
                         ))}
                       </div>
                     )}

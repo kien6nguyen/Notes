@@ -1,5 +1,8 @@
 import React, { useState, useRef } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const IMAGE_BASE = API_URL.replace('/api', '');
+
 const ProfileSettings = ({ user, onClose, onSave }) => {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -8,7 +11,7 @@ const ProfileSettings = ({ user, onClose, onSave }) => {
   const [defaultNoteColor, setDefaultNoteColor] = useState(user?.preferences?.defaultNoteColor || 'default');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [avatarPreview, setAvatarPreview] = useState(user?.avatar ? `http://localhost:8000${user.avatar}` : null);
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar ? `${IMAGE_BASE}${user.avatar}` : null);
   const [isSaving, setIsSaving] = useState(false);
   const avatarInputRef = useRef(null);
 

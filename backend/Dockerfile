@@ -25,6 +25,12 @@ RUN mkdir -p storage/logs \
 RUN cp start.sh /etc/entrypoint.d/99-start.sh \
     && chmod +x /etc/entrypoint.d/99-start.sh
 
+# Inject custom Nginx location block for WebSocket proxying
+RUN mkdir -p /etc/nginx/server-opts.d \
+    && cp nginx-websocket.conf /etc/nginx/server-opts.d/websocket.conf \
+    && chown www-data:www-data /etc/nginx/server-opts.d/websocket.conf \
+    && chmod 644 /etc/nginx/server-opts.d/websocket.conf
+
 # Switch back to www-data for runtime
 USER www-data
 

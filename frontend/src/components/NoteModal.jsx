@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { noteService } from '../services/api';
 import echo, { updateEchoAuth } from '../services/echo';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const IMAGE_BASE = API_URL.replace('/api', '');
+
 const Icons = {
   paperclip: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -288,7 +291,7 @@ const NoteModal = ({ note, allLabels = [], onClose, onSave, defaultNoteColor = '
           <div className="modal-attachments">
             {attachments.map((url, i) => (
               <div key={i} className="modal-attachment-thumb">
-                <img src={`http://localhost:8000${url}`} alt="attachment" />
+                <img src={`${IMAGE_BASE}${url}`} alt="attachment" />
                 <button 
                   type="button" 
                   className="remove-btn"

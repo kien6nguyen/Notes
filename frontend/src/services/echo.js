@@ -3,15 +3,49 @@ import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
+// Parse Host and Protocol dynamically from VITE_API_URL
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+let wsHost = 'localhost';
+let wsPort = 8085;
+let wssPort = 8085;
+let forceTLS = false;
+let authHost = 'http://localhost:8000';
+
+try {
+  const url = new URL(API_URL);
+  wsHost = url.hostname;
+  authHost = url.origin;
+
+  if (url.protocol === 'https:') {
+    forceTLS = true;
+    wsPort = 443;
+    wssPort = 443;
+  } else {
+    // Local / Dev setup fallback
+    if (wsHost !== 'localhost' && wsHost !== '127.0.0.1') {
+      wsPort = 80;
+      wssPort = 443;
+    } else {
+      wsPort = 8085;
+      wssPort = 8085;
+    }
+  }
+} catch (e) {
+  console.error('Failed to parse VITE_API_URL for Reverb setup', e);
+}
+
+// Fallback to match different APP_KEY on dev vs production
+const reverbKey = (wsHost === 'localhost' || wsHost === '127.0.0.1') ? 'finalwebkey' : 'notesappkey';
+
 const echo = new Echo({
   broadcaster: 'reverb',
-  key: 'finalwebkey',
-  wsHost: 'localhost',
-  wsPort: 8085,
-  wssPort: 8085,
-  forceTLS: false,
-  enabledTransports: ['ws'],
-  authEndpoint: 'http://localhost:8000/api/broadcasting/auth',
+  key: reverbKey,
+  wsHost: wsHost,
+  wsPort: wsPort,
+  wssPort: wssPort,
+  forceTLS: forceTLS,
+  enabledTransports: forceTLS ? ['ws', 'wss'] : ['ws'],
+  authEndpoint: `${authHost}/api/broadcasting/auth`,
   auth: {
     headers: {
       Authorization: `Bearer ${localStorage.getItem('token')}`,
