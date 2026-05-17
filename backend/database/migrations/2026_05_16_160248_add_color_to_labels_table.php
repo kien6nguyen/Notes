@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('labels', function (Blueprint $table) {
-            $table->string('color', 7)->default('#000000')->after('name');
+            $table->string('color', 7)->default('#000000');
         });
     }
 

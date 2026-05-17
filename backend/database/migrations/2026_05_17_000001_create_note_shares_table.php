@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('note_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->enum('permission', ['read', 'edit'])->default('read');
+            $table->string('permission')->default('read');
             $table->timestamps();
 
             $table->unique(['note_id', 'user_id']);

@@ -15,24 +15,31 @@ services:
       - key: APP_DEBUG
         value: "false"
       - key: APP_KEY
-        generateValue: true          # Render auto-generates
+        sync: false                   # Run: php artisan key:generate --show
       - key: APP_URL
-        fromService:
-          type: web
-          name: notes-backend
-          property: host
+        sync: false                   # Fill in: https://notes-backend.onrender.com
       - key: DB_CONNECTION
-        value: mysql
+        value: pgsql
       - key: DB_HOST
-        sync: false                   # Fill in PlanetScale/Railway host
+        fromDatabase:
+          name: notes-db
+          property: host
       - key: DB_PORT
-        value: "3306"
+        fromDatabase:
+          name: notes-db
+          property: port
       - key: DB_DATABASE
-        sync: false
+        fromDatabase:
+          name: notes-db
+          property: database
       - key: DB_USERNAME
-        sync: false
+        fromDatabase:
+          name: notes-db
+          property: user
       - key: DB_PASSWORD
-        sync: false
+        fromDatabase:
+          name: notes-db
+          property: password
       - key: REDIS_HOST
         fromService:
           type: redis
@@ -57,9 +64,9 @@ services:
       - key: REVERB_APP_ID
         value: notesapp
       - key: REVERB_APP_KEY
-        generateValue: true
+        value: notesappkey
       - key: REVERB_APP_SECRET
-        generateValue: true
+        sync: false                   # Set any secret string
       - key: REVERB_HOST
         value: "0.0.0.0"
       - key: REVERB_PORT
@@ -69,7 +76,7 @@ services:
       - key: FRONTEND_URL
         sync: false                   # Fill in: https://notes-frontend.onrender.com
       - key: MAIL_MAILER
-        value: log                    # Logs OTP to console (free tier)
+        value: log
       - key: FILESYSTEM_DISK
         value: local
       - key: QUEUE_CONNECTION
@@ -77,19 +84,22 @@ services:
       - key: LOG_LEVEL
         value: error
 
-  # ── Frontend (React + Nginx) ────────────────────────────────────
-  - type: web
-    name: notes-frontend
-    runtime: docker
-    dockerfilePath: ./frontend/Dockerfile.prod
-    dockerContext: ./frontend
-    plan: free
-    envVars:
-      - key: VITE_API_URL
-        sync: false                   # Fill in: https://notes-backend.onrender.com/api
+  # ── Frontend (React Static Site) ───────────────────────────────
+  # Deploy as Render Static Site (not listed here — configure in dashboard)
+  # Build Command: npm run build
+  # Publish Directory: dist
+  # Root Directory: frontend
+  # Env: VITE_API_URL = https://notes-backend.onrender.com/api
 
   # ── Redis ───────────────────────────────────────────────────────
   - type: redis
     name: notes-redis
     plan: free
     maxmemoryPolicy: noeviction
+
+databases:
+  # ── PostgreSQL ──────────────────────────────────────────────────
+  - name: notes-db
+    plan: free
+    databaseName: notesdb
+    user: notesuser
