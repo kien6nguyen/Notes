@@ -134,7 +134,7 @@ const Dashboard = () => {
     // First check if user is verified by fetching notes alone
     // This way a single clear 403 can redirect to verify-email
     try {
-      const notesRes = await noteService.getNotes(search);
+      const notesRes = await noteService.getNotes();
       
       // If notes succeeded, load everything else in parallel
       const [labelsRes, sharedRes] = await Promise.all([
@@ -165,21 +165,19 @@ const Dashboard = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [navigate, search]);
+  }, [navigate]);
 
   useEffect(() => {
-    if (!search && Array.isArray(notes)) {
+    if (Array.isArray(notes)) {
       localStorage.setItem('cached_notes', JSON.stringify(notes));
     }
-  }, [notes, search]);
+  }, [notes]);
 
   useEffect(() => {
     if (Array.isArray(labels)) {
       localStorage.setItem('cached_labels', JSON.stringify(labels));
     }
   }, [labels]);
-
-  const isFirstRender = React.useRef(true);
 
   useEffect(() => {
     // 1. No token at all → login
@@ -189,9 +187,6 @@ const Dashboard = () => {
     }
 
     // 2. Token exists but account not yet verified → verify-email
-    // Only redirect if email_verified_at is explicitly null (not undefined).
-    // undefined = old user object in localStorage before this feature was added → let them through.
-    // null = newly registered unverified user → must verify.
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const parsed = JSON.parse(storedUser);
@@ -201,18 +196,8 @@ const Dashboard = () => {
       }
     }
 
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      fetchData();
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      fetchData();
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }, [fetchData, search, navigate]);
+    fetchData();
+  }, [fetchData, navigate]);
 
   const handleLogout = () => {
     authService.logout().catch(() => {});
@@ -378,11 +363,26 @@ const Dashboard = () => {
     }
   }, [notes, labels]);
 
-  // Filter notes by label
+  // Filter notes by label and search query instantly in the frontend
   const filteredNotes = (() => {
     const source = showShared ? sharedNotes : (Array.isArray(notes) ? notes : []);
-    if (!filterLabel) return source;
-    return source.filter(n => n.labels && n.labels.some(l => l.id === filterLabel));
+    let result = source;
+    
+    if (filterLabel) {
+      result = result.filter(n => n.labels && n.labels.some(l => l.id === filterLabel));
+    }
+    
+    if (search.trim()) {
+      const query = search.toLowerCase();
+      result = result.filter(n => {
+        const titleMatch = n.title && n.title.toLowerCase().includes(query);
+        const contentMatch = n.content && n.content.toLowerCase().includes(query);
+        const labelMatch = n.labels && n.labels.some(l => l.name.toLowerCase().includes(query));
+        return titleMatch || contentMatch || labelMatch;
+      });
+    }
+    
+    return result;
   })();
 
   if (!user) return <div style={{textAlign: 'center', padding: '2rem', color: 'var(--text-muted)'}}>Loading...</div>;
@@ -507,8 +507,8 @@ const Dashboard = () => {
             const isTemp = String(note.id).startsWith('temp-') || note._isSaving;
             return (
             <div 
-              key={note._tempId ? `note-${note._tempId}` : (note.id ? `note-${note.id}` : `note-index-${noteIndex}`)} 
-              className={`note-card color-${note.color}`}
+              key={note.id ? `note-${note.id}-${note.is_pinned}` : `note-temp-${note._tempId || noteIndex}`} 
+              className={`note-card color-${note.color} ${note.is_pinned ? 'pinned' : ''}`}
               onClick={() => !isTemp && handleOpenModal(note)}
               style={{ 
                 opacity: isTemp ? 0.5 : 1, 
@@ -520,7 +520,8 @@ const Dashboard = () => {
                 {note.is_locked && <span title="Password protected" style={{ color: 'var(--text-muted)' }}>{Icons.lock}</span>}
                 {note.is_shared && <span title="Shared" style={{ color: 'var(--accent)' }}>{Icons.share}</span>}
                 <button
-                  className="note-pin-btn" style={{ position: 'static', opacity: note.is_pinned ? 1 : undefined, color: note.is_pinned ? 'var(--accent)' : 'var(--text-muted)' }}
+                  className={`note-pin-btn ${note.is_pinned ? 'pinned' : ''}`}
+                  style={{ position: 'static' }}
                   onClick={(e) => handleTogglePin(note, e)}
                   title={note.is_pinned ? 'Unpin' : 'Pin note'}
                 >

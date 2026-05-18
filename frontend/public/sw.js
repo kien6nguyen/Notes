@@ -1,4 +1,4 @@
-const CACHE_NAME = 'notes-app-v3';
+const CACHE_NAME = 'notes-app-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -47,9 +47,10 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-  // API requests: ALWAYS network-first, NO caching for auth-sensitive endpoints
-  // Caching API responses causes issues with token changes and auth state
-  if (url.pathname.startsWith('/api/') || url.hostname.includes('onrender.com')) {
+  const isApiRequest = url.pathname.startsWith('/api/') || 
+                       url.pathname.includes('/api/') || 
+                       url.hostname.startsWith('notes-i3zt.');
+  if (isApiRequest) {
     event.respondWith(
       fetch(request)
         .catch(() => {

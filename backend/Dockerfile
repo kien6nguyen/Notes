@@ -36,6 +36,11 @@ RUN mkdir -p /etc/services.d/reverb \
     && cp reverb-service.sh /etc/services.d/reverb/run \
     && chmod +x /etc/services.d/reverb/run
 
+# Copy Queue s6 service run script
+RUN mkdir -p /etc/services.d/queue \
+    && cp queue-service.sh /etc/services.d/queue/run \
+    && chmod +x /etc/services.d/queue/run
+
 # Switch back to www-data for runtime
 USER www-data
 

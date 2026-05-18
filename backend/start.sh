@@ -21,6 +21,6 @@ php artisan db:seed --force
 php artisan storage:link || true
 
 # Ensure all generated files are owned by www-data
-chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
 
 echo "✅ Backend ready"

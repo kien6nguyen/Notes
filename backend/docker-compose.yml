@@ -1,6 +1,8 @@
 services:
   app:
-    image: serversideup/php:8.4-fpm-nginx
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: finalweb_backend
     environment:
       - PHP_DISPLAY_ERRORS=1

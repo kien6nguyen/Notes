@@ -161,10 +161,24 @@ class AuthController extends Controller
             ['token' => Hash::make($otp), 'created_at' => now()]
         );
 
-        // In a real app, send this via email. We're using log for testing.
+        $user = User::where('email', $request->email)->first();
+
+        // Send OTP via email
+        try {
+            \Illuminate\Support\Facades\Mail::raw(
+                "Your Notes App password reset code is: {$otp}\n\nThis code expires in 15 minutes.\n\nIf you did not request a password reset, please ignore this email.",
+                function ($message) use ($request, $user, $otp) {
+                    $message->to($request->email, $user ? $user->name : '')
+                        ->subject('Your Notes App Password Reset OTP: ' . $otp);
+                }
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning("Failed to send password reset OTP email to {$request->email}: " . $e->getMessage());
+        }
+
         \Illuminate\Support\Facades\Log::info("Password reset OTP for {$request->email}: {$otp}");
 
-        return response()->json(['message' => 'OTP sent to your email. Check laravel.log if MAIL_MAILER=log']);
+        return response()->json(['message' => 'OTP sent to your email. Check your inbox!']);
     }
 
     public function resetPassword(Request $request)
@@ -183,7 +197,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid or expired OTP'], 400);
         }
 
-        $user = App\Models\User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
         $user->password = Hash::make($request->password);
         $user->save();
 

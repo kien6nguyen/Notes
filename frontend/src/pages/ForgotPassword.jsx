@@ -14,15 +14,27 @@ const ForgotPassword = () => {
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
+    
+    // Validate email structure instantly
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    // Transition to OTP entry step immediately (0ms lag!)
+    setStep(2);
     setLoading(true);
     setError('');
-    setMessage('');
+    setMessage('Sending password reset OTP to your email...');
+
     try {
       const response = await authService.forgotPassword(email);
-      setMessage(response.data.message);
-      setStep(2);
+      setMessage(response.data.message || 'OTP sent successfully! Check your inbox.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP');
+      // If the email is invalid/unregistered, bounce back to step 1 and show the error
+      setStep(1);
+      setError(err.response?.data?.message || 'Failed to send OTP. Make sure this email is registered.');
     } finally {
       setLoading(false);
     }
