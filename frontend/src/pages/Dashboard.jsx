@@ -92,6 +92,7 @@ const Dashboard = () => {
   });
   const [search, setSearch] = useState('');
   const [filterLabel, setFilterLabel] = useState(null);
+  const [filterOwner, setFilterOwner] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLabelManagerOpen, setIsLabelManagerOpen] = useState(false);
@@ -118,6 +119,12 @@ const Dashboard = () => {
       window.removeEventListener('offline', goOffline);
     };
   }, []);
+
+  // Reset filters when tab changes
+  useEffect(() => {
+    setFilterLabel(null);
+    setFilterOwner(null);
+  }, [showShared]);
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -363,6 +370,19 @@ const Dashboard = () => {
     }
   }, [notes, labels]);
 
+  // Extract unique owners from shared notes for filtering
+  const uniqueOwners = React.useMemo(() => {
+    const ownersMap = {};
+    if (Array.isArray(sharedNotes)) {
+      sharedNotes.forEach(note => {
+        if (note.owner && note.owner.id) {
+          ownersMap[note.owner.id] = note.owner;
+        }
+      });
+    }
+    return Object.values(ownersMap);
+  }, [sharedNotes]);
+
   // Filter notes by label and search query instantly in the frontend
   const filteredNotes = (() => {
     const source = showShared ? sharedNotes : (Array.isArray(notes) ? notes : []);
@@ -371,6 +391,10 @@ const Dashboard = () => {
     if (filterLabel) {
       result = result.filter(n => n.labels && n.labels.some(l => l.id === filterLabel));
     }
+
+    if (showShared && filterOwner) {
+      result = result.filter(n => n.owner && n.owner.id === filterOwner);
+    }
     
     if (search.trim()) {
       const query = search.toLowerCase();
@@ -378,7 +402,8 @@ const Dashboard = () => {
         const titleMatch = n.title && n.title.toLowerCase().includes(query);
         const contentMatch = n.content && n.content.toLowerCase().includes(query);
         const labelMatch = n.labels && n.labels.some(l => l.name.toLowerCase().includes(query));
-        return titleMatch || contentMatch || labelMatch;
+        const ownerMatch = showShared && n.owner && n.owner.name.toLowerCase().includes(query);
+        return titleMatch || contentMatch || labelMatch || ownerMatch;
       });
     }
     
@@ -490,6 +515,30 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Owner Filter Bar (only for Shared tab) */}
+      {showShared && uniqueOwners.length > 0 && (
+        <div className="label-filter-bar" style={{ marginTop: '0.5rem', borderTop: '1px dashed var(--border-color)', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.375rem' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', marginRight: '0.5rem', fontWeight: 500 }}>
+            Shared by:
+          </span>
+          <button 
+            className={`label-filter-chip ${!filterOwner ? 'active' : ''}`}
+            onClick={() => setFilterOwner(null)}
+          >
+            All Sharers
+          </button>
+          {uniqueOwners.map(owner => (
+            <button
+              key={owner.id}
+              className={`label-filter-chip ${filterOwner === owner.id ? 'active' : ''}`}
+              onClick={() => setFilterOwner(filterOwner === owner.id ? null : owner.id)}
+            >
+              {owner.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Content */}
       {isLoading ? (
         <div className="empty-state">
@@ -528,6 +577,23 @@ const Dashboard = () => {
                   {note.is_pinned ? Icons.pinFilled : Icons.pinOutline}
                 </button>
               </div>
+
+              {showShared && note.owner && (
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.25rem', 
+                  fontSize: '0.75rem', 
+                  color: 'var(--accent)', 
+                  marginBottom: '0.375rem',
+                  fontWeight: 600
+                }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <span>By: {note.owner.name}</span>
+                </div>
+              )}
 
               <div className="note-title">{note.title || 'Untitled'}</div>
 
