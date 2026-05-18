@@ -9,15 +9,17 @@ services:
     healthCheckPath: /up
     envVars:
       - key: APP_NAME
-        value: NotesApp
+        value: Notes App
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
         value: "false"
       - key: APP_KEY
-        sync: false                   # Run: php artisan key:generate --show
-      - key: APP_URL
-        sync: false                   # Fill in: https://notes-backend.onrender.com
+        sync: false                   # Fill in with your generated base64 key
+      - key: FRONTEND_URL
+        sync: false                   # Fill in: https://your-frontend.onrender.com
+
+      # Database
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
@@ -40,51 +42,62 @@ services:
         fromDatabase:
           name: notes-db
           property: password
-      # ── Upstash Redis (fill in from https://console.upstash.com) ──
+      - key: DB_SSLMODE
+        value: require
+
+      # Upstash Redis
+      - key: REDIS_SCHEME
+        value: tls
       - key: REDIS_HOST
-        sync: false
+        sync: false                   # Fill in your Upstash Host
       - key: REDIS_PORT
         value: "6379"
       - key: REDIS_PASSWORD
-        sync: false
-      - key: REDIS_SCHEME
-        value: tls
+        sync: false                   # Fill in your Upstash Password
       - key: CACHE_STORE
         value: redis
       - key: SESSION_DRIVER
         value: redis
+
+      # WebSockets (Reverb)
       - key: BROADCAST_CONNECTION
         value: reverb
       - key: REVERB_APP_ID
-        value: notesapp
+        value: finalweb
       - key: REVERB_APP_KEY
-        value: notesappkey
+        value: finalwebkey
       - key: REVERB_APP_SECRET
-        sync: false
+        value: finalwebsecret
       - key: REVERB_HOST
-        value: "0.0.0.0"
+        sync: false                   # Fill in: notes-backend.onrender.com
       - key: REVERB_PORT
-        value: "8085"
+        value: "443"
       - key: REVERB_SCHEME
-        value: http
-      - key: FRONTEND_URL
-        sync: false                   # Fill in: https://notes-frontend.onrender.com
-      - key: MAIL_MAILER
-        value: log
-      - key: FILESYSTEM_DISK
-        value: local
+        value: https
+
+      # Queue & Mail
       - key: QUEUE_CONNECTION
-        value: sync
-      - key: LOG_LEVEL
-        value: error
+        value: redis
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_SCHEME
+        value: smtps
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "465"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: "Notes App"
 
 databases:
   # ── PostgreSQL (Render free) ────────────────────────────────────
   - name: notes-db
     plan: free
-    databaseName: notesdb
-    user: notesuser
-
-  # ── Frontend (React + Vite → Nginx) ────────────────────────────
-  # NOTE: Also add as a separate Static Site or Web Service in the Render Dashboard
-  # pointing to frontend/Dockerfile.prod with build arg VITE_API_URL
+    databaseName: finalweb_db
+    user: finalweb_user
